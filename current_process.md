@@ -35,6 +35,7 @@ AlgoShell 是面向 Java 秋招准备的单用户本地 Hot 100 自适应训练�
 - 已完善 AI 状态诊断与配置入口：顶部明确显示 `AI LOCAL · 未配置`，点击后展示本地降级原因和启用步骤；`/api/health`、`/api/config` 只返回配置状态与原因，不返回 Key。
 - 已增加通用 `configure-ai.bat` 与 `scripts/configure-ai.ps1`：可配置任意 OpenAI Chat Completions 兼容 Provider，使用安全输入读取 Key，写入 Git 忽略的本机 `.env`，不在终端回显密钥；README 与 PRD 已同步。
 - README 已重写为可公开发布的使用文档，覆盖产品简介、用途、环境要求、启动步骤、训练命令、DeepSeek/其他 Provider 配置、安全规范、判题边界和开发验证。
+- 项目已初始化为 Git 仓库并发布到公开仓库 `https://github.com/LiXQ-7/AlgoShell`，默认分支为 `main`。
 
 ## 当前工作与未完成项
 
@@ -46,7 +47,7 @@ AlgoShell 是面向 Java 秋招准备的单用户本地 Hot 100 自适应训练�
 
 ## 阻塞与待用户决定
 
-- GitHub 发布等待用户确认目标：本地目录尚未初始化为 Git 仓库，GitHub 账号 `LiXQ-7` 下未找到现成 AlgoShell 仓库；需确认新仓库名称及公开/私有，或提供已有仓库 URL。
+- 无实现阻塞。
 - 如继续扩充题库，建议由用户确认优先顺序：先补 45—55 道 A 级核心题的本地 Harness，还是按 Hot 100 清单顺序补齐全部 100 道。
 
 ## 下一步（按顺序）
@@ -78,7 +79,8 @@ AlgoShell 是面向 Java 秋招准备的单用户本地 Hot 100 自适应训练�
 - 2026-07-29 时长调度回归：无历史输入下，35 分钟工作日计划为 3 个任务（Solve、Learn、Summary），120 分钟工作日计划为 6 个任务（2 Solve、Guided、2 Learn、Summary）；生产构建通过。
 - 2026-07-29 计划与 AI 配置 UX 回归：`npm.cmd run typecheck`、33 项 Vitest 和 `npm.cmd run build` 均通过；浏览器验证七日计划卡片、顶部 AI 状态点击、缺少 `.env` 的明确原因与安全配置步骤均正常，控制台无 error/warning。
 - 2026-07-29 通用 AI Provider 回归：类型检查、33 项 Vitest 和生产构建通过；真实 DeepSeek Summary 调用返回 `source: AI`、模型 `deepseek-reasoner`；`/api/config` 显示 Provider/模型/Base URL 且不包含 Key；浏览器显示 `AI BALANCED` 和当前 Provider，控制台无 error/warning。
-- 2026-07-29 GitHub 发布前安全检查：`.env` 已被 `.gitignore` 排除，`.env.example` 的 `AI_API_KEY` 为空；排除本机运行数据和依赖后，候选发布文件未发现 `sk-` API Key 形态内容。尚未初始化 Git、提交或推送。
+- 2026-07-29 GitHub 发布前安全检查：`.env` 已被 `.gitignore` 排除，`.env.example` 的 `AI_API_KEY` 为空；排除本机运行数据和依赖后，候选发布文件未发现 `sk-` API Key 形态内容。
+- 2026-07-29 GitHub 发布：公开仓库 `LiXQ-7/AlgoShell` 创建成功，`main` 已推送；远端确认不存在 `.env`，且 `.env.example` 的 `AI_API_KEY` 为空。
 
 ## 关键文件
 
