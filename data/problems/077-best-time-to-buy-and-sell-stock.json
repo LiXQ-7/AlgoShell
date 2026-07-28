@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "lc-0121",
+  "leetcodeId": 121,
+  "title": "买卖股票的最佳时机",
+  "slug": "best-time-to-buy-and-sell-stock",
+  "difficulty": "EASY",
+  "topics": [
+    "GREEDY"
+  ],
+  "track": "GREEDY",
+  "importance": "B",
+  "coverageTarget": "LEARN",
+  "defaultMode": "ACM",
+  "supportedModes": [
+    "ACM",
+    "FUNCTION"
+  ],
+  "prerequisites": [
+    "HEAP"
+  ],
+  "estimatedMinutes": {
+    "solve": 20,
+    "guided": 15,
+    "learn": 8,
+    "recall": 3,
+    "rebuild": 15
+  },
+  "source": {
+    "leetcodeUrl": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/",
+    "contentPolicy": "LOCALLY_AUTHORED_SUMMARY"
+  },
+  "statement": {
+    "summary": "给定每天的股票价格，只允许一次买入和一次卖出，求最大利润。",
+    "descriptionMarkdown": "给定每天的股票价格，只允许一次买入和一次卖出，求最大利润。\n\n本工具使用本地改写摘要。完整约束、特殊数据结构定义与更多示例请点击“打开 LeetCode”查看官方题面。",
+    "constraints": [
+      "输入规模满足常见面试题约束",
+      "请关注空输入、重复元素与边界值"
+    ],
+    "examples": [
+      {
+        "input": "6\n7 1 5 3 6 4",
+        "output": "5",
+        "explanation": "基础示例。"
+      },
+      {
+        "input": "5\n7 6 4 3 1",
+        "output": "0"
+      },
+      {
+        "input": "2\n1 2",
+        "output": "1"
+      },
+      {
+        "input": "1\n5",
+        "output": "0"
+      }
+    ]
+  },
+  "functionMode": {
+    "className": "Solution",
+    "methodSignature": "请按照官方题目要求实现目标方法",
+    "userTemplate": "class Solution {\n    // 在这里实现官方题目要求的方法\n}\n",
+    "harnessId": "OFFICIAL_MANUAL",
+    "publicTests": [],
+    "hiddenTests": [],
+    "timeLimitMs": 3000,
+    "outputLimitBytes": 1048576
+  },
+  "acmMode": {
+    "inputDescription": "第一行是 n，第二行是 n 个价格。",
+    "outputDescription": "输出最大利润，无法获利时输出 0。",
+    "mainTemplate": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        // 根据上方输入格式读取数据并输出答案\n    }\n}\n",
+    "publicTests": [
+      "tc-1",
+      "tc-2"
+    ],
+    "hiddenTests": [
+      "tc-3",
+      "tc-4"
+    ],
+    "timeLimitMs": 3000,
+    "outputLimitBytes": 1048576
+  },
+  "testCases": [
+    {
+      "id": "tc-1",
+      "visibility": "PUBLIC",
+      "input": "6\n7 1 5 3 6 4\n",
+      "expected": "5\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "BASIC"
+      ]
+    },
+    {
+      "id": "tc-2",
+      "visibility": "PUBLIC",
+      "input": "5\n7 6 4 3 1\n",
+      "expected": "0\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "EDGE"
+      ]
+    },
+    {
+      "id": "tc-3",
+      "visibility": "HIDDEN",
+      "input": "2\n1 2\n",
+      "expected": "1\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "EDGE"
+      ]
+    },
+    {
+      "id": "tc-4",
+      "visibility": "HIDDEN",
+      "input": "1\n5\n",
+      "expected": "0\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "EDGE"
+      ]
+    }
+  ],
+  "learningCard": {
+    "plainExplanation": "给定每天的股票价格，只允许一次买入和一次卖出，求最大利润。",
+    "bruteForce": "直接枚举所有可能通常会产生重复计算；先写出暴力解，再找出可以复用的信息。",
+    "keyObservation": "卖出当天的最佳利润由此前最低买入价决定。",
+    "algorithmSteps": [
+      "维护历史最低价格",
+      "计算当天卖出的利润",
+      "更新最大利润"
+    ],
+    "coreCode": "best = Math.max(best, price - minPrice);",
+    "pitfalls": [
+      "必须先买后卖",
+      "全程下降时答案为 0"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "relatedProblemIds": []
+  },
+  "hints": [
+    {
+      "level": 1,
+      "content": "先写出暴力解会重复计算什么，再寻找可以维护的信息。"
+    },
+    {
+      "level": 2,
+      "content": "从贪心的常见状态与不变量开始建模。"
+    },
+    {
+      "level": 3,
+      "content": "卖出当天的最佳利润由此前最低买入价决定。"
+    },
+    {
+      "level": 4,
+      "content": "维护历史最低价格 → 计算当天卖出的利润 → 更新最大利润"
+    },
+    {
+      "level": 5,
+      "content": "best = Math.max(best, price - minPrice);"
+    },
+    {
+      "level": 6,
+      "content": "完整讲解已在学习卡中展开；官方完整题面与参考实现请通过题目链接核对。"
+    }
+  ],
+  "reviewCards": [
+    {
+      "id": "recall-1",
+      "type": "IDEA_RECALL",
+      "prompt": "不看标签，说明“买卖股票的最佳时机”的题型、核心状态、不变量、易错点与复杂度。",
+      "rubric": [
+        "题型识别",
+        "核心状态",
+        "边界条件",
+        "复杂度"
+      ]
+    }
+  ]
+}

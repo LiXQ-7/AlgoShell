@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.07.28",
+  "problems": [
+    {
+      "id": "lc-0001",
+      "file": "001-two-sum.json",
+      "order": 1
+    },
+    {
+      "id": "lc-0049",
+      "file": "002-group-anagrams.json",
+      "order": 2
+    },
+    {
+      "id": "lc-0128",
+      "file": "003-longest-consecutive-sequence.json",
+      "order": 3
+    },
+    {
+      "id": "lc-0283",
+      "file": "004-move-zeroes.json",
+      "order": 4
+    },
+    {
+      "id": "lc-0011",
+      "file": "005-container-with-most-water.json",
+      "order": 5
+    },
+    {
+      "id": "lc-0015",
+      "file": "006-3sum.json",
+      "order": 6
+    },
+    {
+      "id": "lc-0042",
+      "file": "007-trapping-rain-water.json",
+      "order": 7
+    },
+    {
+      "id": "lc-0003",
+      "file": "008-longest-substring-without-repeating-characters.json",
+      "order": 8
+    },
+    {
+      "id": "lc-0438",
+      "file": "009-find-all-anagrams-in-a-string.json",
+      "order": 9
+    },
+    {
+      "id": "lc-0560",
+      "file": "010-subarray-sum-equals-k.json",
+      "order": 10
+    },
+    {
+      "id": "lc-0239",
+      "file": "011-sliding-window-maximum.json",
+      "order": 11
+    },
+    {
+      "id": "lc-0076",
+      "file": "012-minimum-window-substring.json",
+      "order": 12
+    },
+    {
+      "id": "lc-0053",
+      "file": "013-maximum-subarray.json",
+      "order": 13
+    },
+    {
+      "id": "lc-0056",
+      "file": "014-merge-intervals.json",
+      "order": 14
+    },
+    {
+      "id": "lc-0189",
+      "file": "015-rotate-array.json",
+      "order": 15
+    },
+    {
+      "id": "lc-0238",
+      "file": "016-product-of-array-except-self.json",
+      "order": 16
+    },
+    {
+      "id": "lc-0041",
+      "file": "017-first-missing-positive.json",
+      "order": 17
+    },
+    {
+      "id": "lc-0073",
+      "file": "018-set-matrix-zeroes.json",
+      "order": 18
+    },
+    {
+      "id": "lc-0054",
+      "file": "019-spiral-matrix.json",
+      "order": 19
+    },
+    {
+      "id": "lc-0048",
+      "file": "020-rotate-image.json",
+      "order": 20
+    },
+    {
+      "id": "lc-0240",
+      "file": "021-search-a-2d-matrix-ii.json",
+      "order": 21
+    },
+    {
+      "id": "lc-0160",
+      "file": "022-intersection-of-two-linked-lists.json",
+      "order": 22
+    },
+    {
+      "id": "lc-0206",
+      "file": "023-reverse-linked-list.json",
+      "order": 23
+    },
+    {
+      "id": "lc-0234",
+      "file": "024-palindrome-linked-list.json",
+      "order": 24
+    },
+    {
+      "id": "lc-0141",
+      "file": "025-linked-list-cycle.json",
+      "order": 25
+    },
+    {
+      "id": "lc-0142",
+      "file": "026-linked-list-cycle-ii.json",
+      "order": 26
+    },
+    {
+      "id": "lc-0021",
+      "file": "027-merge-two-sorted-lists.json",
+      "order": 27
+    },
+    {
+      "id": "lc-0002",
+      "file": "028-add-two-numbers.json",
+      "order": 28
+    },
+    {
+      "id": "lc-0019",
+      "file": "029-remove-nth-node-from-end-of-list.json",
+      "order": 29
+    },
+    {
+      "id": "lc-0024",
+      "file": "030-swap-nodes-in-pairs.json",
+      "order": 30
+    },
+    {
+      "id": "lc-0025",
+      "file": "031-reverse-nodes-in-k-group.json",
+      "order": 31
+    },
+    {
+      "id": "lc-0138",
+      "file": "032-copy-list-with-random-pointer.json",
+      "order": 32
+    },
+    {
+      "id": "lc-0148",
+      "file": "033-sort-list.json",
+      "order": 33
+    },
+    {
+      "id": "lc-0023",
+      "file": "034-merge-k-sorted-lists.json",
+      "order": 34
+    },
+    {
+      "id": "lc-0146",
+      "file": "035-lru-cache.json",
+      "order": 35
+    },
+    {
+      "id": "lc-0094",
+      "file": "036-binary-tree-inorder-traversal.json",
+      "order": 36
+    },
+    {
+      "id": "lc-0104",
+      "file": "037-maximum-depth-of-binary-tree.json",
+      "order": 37
+    },
+    {
+      "id": "lc-0226",
+      "file": "038-invert-binary-tree.json",
+      "order": 38
+    },
+    {
+      "id": "lc-0101",
+      "file": "039-symmetric-tree.json",
+      "order": 39
+    },
+    {
+      "id": "lc-0543",
+      "file": "040-diameter-of-binary-tree.json",
+      "order": 40
+    },
+    {
+      "id": "lc-0102",
+      "file": "041-binary-tree-level-order-traversal.json",
+      "order": 41
+    },
+    {
+      "id": "lc-0108",
+      "file": "042-convert-sorted-array-to-binary-search-tree.json",
+      "order": 42
+    },
+    {
+      "id": "lc-0098",
+      "file": "043-validate-binary-search-tree.json",
+      "order": 43
+    },
+    {
+      "id": "lc-0230",
+      "file": "044-kth-smallest-element-in-a-bst.json",
+      "order": 44
+    },
+    {
+      "id": "lc-0199",
+      "file": "045-binary-tree-right-side-view.json",
+      "order": 45
+    },
+    {
+      "id": "lc-0114",
+      "file": "046-flatten-binary-tree-to-linked-list.json",
+      "order": 46
+    },
+    {
+      "id": "lc-0105",
+      "file": "047-construct-binary-tree-from-preorder-and-inorder-traversal.json",
+      "order": 47
+    },
+    {
+      "id": "lc-0437",
+      "file": "048-path-sum-iii.json",
+      "order": 48
+    },
+    {
+      "id": "lc-0236",
+      "file": "049-lowest-common-ancestor-of-a-binary-tree.json",
+      "order": 49
+    },
+    {
+      "id": "lc-0124",
+      "file": "050-binary-tree-maximum-path-sum.json",
+      "order": 50
+    },
+    {
+      "id": "lc-0200",
+      "file": "051-number-of-islands.json",
+      "order": 51
+    },
+    {
+      "id": "lc-0994",
+      "file": "052-rotting-oranges.json",
+      "order": 52
+    },
+    {
+      "id": "lc-0207",
+      "file": "053-course-schedule.json",
+      "order": 53
+    },
+    {
+      "id": "lc-0208",
+      "file": "054-implement-trie-prefix-tree.json",
+      "order": 54
+    },
+    {
+      "id": "lc-0046",
+      "file": "055-permutations.json",
+      "order": 55
+    },
+    {
+      "id": "lc-0078",
+      "file": "056-subsets.json",
+      "order": 56
+    },
+    {
+      "id": "lc-0017",
+      "file": "057-letter-combinations-of-a-phone-number.json",
+      "order": 57
+    },
+    {
+      "id": "lc-0039",
+      "file": "058-combination-sum.json",
+      "order": 58
+    },
+    {
+      "id": "lc-0022",
+      "file": "059-generate-parentheses.json",
+      "order": 59
+    },
+    {
+      "id": "lc-0079",
+      "file": "060-word-search.json",
+      "order": 60
+    },
+    {
+      "id": "lc-0131",
+      "file": "061-palindrome-partitioning.json",
+      "order": 61
+    },
+    {
+      "id": "lc-0051",
+      "file": "062-n-queens.json",
+      "order": 62
+    },
+    {
+      "id": "lc-0035",
+      "file": "063-search-insert-position.json",
+      "order": 63
+    },
+    {
+      "id": "lc-0074",
+      "file": "064-search-a-2d-matrix.json",
+      "order": 64
+    },
+    {
+      "id": "lc-0034",
+      "file": "065-find-first-and-last-position-of-element-in-sorted-array.json",
+      "order": 65
+    },
+    {
+      "id": "lc-0033",
+      "file": "066-search-in-rotated-sorted-array.json",
+      "order": 66
+    },
+    {
+      "id": "lc-0153",
+      "file": "067-find-minimum-in-rotated-sorted-array.json",
+      "order": 67
+    },
+    {
+      "id": "lc-0004",
+      "file": "068-median-of-two-sorted-arrays.json",
+      "order": 68
+    },
+    {
+      "id": "lc-0020",
+      "file": "069-valid-parentheses.json",
+      "order": 69
+    },
+    {
+      "id": "lc-0155",
+      "file": "070-min-stack.json",
+      "order": 70
+    },
+    {
+      "id": "lc-0394",
+      "file": "071-decode-string.json",
+      "order": 71
+    },
+    {
+      "id": "lc-0739",
+      "file": "072-daily-temperatures.json",
+      "order": 72
+    },
+    {
+      "id": "lc-0084",
+      "file": "073-largest-rectangle-in-histogram.json",
+      "order": 73
+    },
+    {
+      "id": "lc-0215",
+      "file": "074-kth-largest-element-in-an-array.json",
+      "order": 74
+    },
+    {
+      "id": "lc-0347",
+      "file": "075-top-k-frequent-elements.json",
+      "order": 75
+    },
+    {
+      "id": "lc-0295",
+      "file": "076-find-median-from-data-stream.json",
+      "order": 76
+    },
+    {
+      "id": "lc-0121",
+      "file": "077-best-time-to-buy-and-sell-stock.json",
+      "order": 77
+    },
+    {
+      "id": "lc-0055",
+      "file": "078-jump-game.json",
+      "order": 78
+    },
+    {
+      "id": "lc-0045",
+      "file": "079-jump-game-ii.json",
+      "order": 79
+    },
+    {
+      "id": "lc-0763",
+      "file": "080-partition-labels.json",
+      "order": 80
+    },
+    {
+      "id": "lc-0070",
+      "file": "081-climbing-stairs.json",
+      "order": 81
+    },
+    {
+      "id": "lc-0118",
+      "file": "082-pascals-triangle.json",
+      "order": 82
+    },
+    {
+      "id": "lc-0198",
+      "file": "083-house-robber.json",
+      "order": 83
+    },
+    {
+      "id": "lc-0279",
+      "file": "084-perfect-squares.json",
+      "order": 84
+    },
+    {
+      "id": "lc-0322",
+      "file": "085-coin-change.json",
+      "order": 85
+    },
+    {
+      "id": "lc-0139",
+      "file": "086-word-break.json",
+      "order": 86
+    },
+    {
+      "id": "lc-0300",
+      "file": "087-longest-increasing-subsequence.json",
+      "order": 87
+    },
+    {
+      "id": "lc-0152",
+      "file": "088-maximum-product-subarray.json",
+      "order": 88
+    },
+    {
+      "id": "lc-0416",
+      "file": "089-partition-equal-subset-sum.json",
+      "order": 89
+    },
+    {
+      "id": "lc-0032",
+      "file": "090-longest-valid-parentheses.json",
+      "order": 90
+    },
+    {
+      "id": "lc-0062",
+      "file": "091-unique-paths.json",
+      "order": 91
+    },
+    {
+      "id": "lc-0064",
+      "file": "092-minimum-path-sum.json",
+      "order": 92
+    },
+    {
+      "id": "lc-0005",
+      "file": "093-longest-palindromic-substring.json",
+      "order": 93
+    },
+    {
+      "id": "lc-1143",
+      "file": "094-longest-common-subsequence.json",
+      "order": 94
+    },
+    {
+      "id": "lc-0072",
+      "file": "095-edit-distance.json",
+      "order": 95
+    },
+    {
+      "id": "lc-0136",
+      "file": "096-single-number.json",
+      "order": 96
+    },
+    {
+      "id": "lc-0169",
+      "file": "097-majority-element.json",
+      "order": 97
+    },
+    {
+      "id": "lc-0075",
+      "file": "098-sort-colors.json",
+      "order": 98
+    },
+    {
+      "id": "lc-0031",
+      "file": "099-next-permutation.json",
+      "order": 99
+    },
+    {
+      "id": "lc-0287",
+      "file": "100-find-the-duplicate-number.json",
+      "order": 100
+    }
+  ]
+}

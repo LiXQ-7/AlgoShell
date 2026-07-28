@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "lc-0003",
+  "leetcodeId": 3,
+  "title": "无重复字符的最长子串",
+  "slug": "longest-substring-without-repeating-characters",
+  "difficulty": "MEDIUM",
+  "topics": [
+    "SLIDING_WINDOW"
+  ],
+  "track": "SLIDING_WINDOW",
+  "importance": "A",
+  "coverageTarget": "SOLVE",
+  "defaultMode": "ACM",
+  "supportedModes": [
+    "ACM",
+    "FUNCTION"
+  ],
+  "prerequisites": [
+    "TWO_POINTERS"
+  ],
+  "estimatedMinutes": {
+    "solve": 25,
+    "guided": 15,
+    "learn": 8,
+    "recall": 3,
+    "rebuild": 15
+  },
+  "source": {
+    "leetcodeUrl": "https://leetcode.cn/problems/longest-substring-without-repeating-characters/",
+    "contentPolicy": "LOCALLY_AUTHORED_SUMMARY"
+  },
+  "statement": {
+    "summary": "给定字符串，求不含重复字符的最长连续子串长度。",
+    "descriptionMarkdown": "给定字符串，求不含重复字符的最长连续子串长度。\n\n本工具使用本地改写摘要。完整约束、特殊数据结构定义与更多示例请点击“打开 LeetCode”查看官方题面。",
+    "constraints": [
+      "输入规模满足常见面试题约束",
+      "请关注空输入、重复元素与边界值"
+    ],
+    "examples": [
+      {
+        "input": "abcabcbb",
+        "output": "3",
+        "explanation": "基础示例。"
+      },
+      {
+        "input": "bbbbb",
+        "output": "1"
+      },
+      {
+        "input": "pwwkew",
+        "output": "3"
+      },
+      {
+        "input": "abba",
+        "output": "2"
+      }
+    ]
+  },
+  "functionMode": {
+    "className": "Solution",
+    "methodSignature": "请按照官方题目要求实现目标方法",
+    "userTemplate": "class Solution {\n    // 在这里实现官方题目要求的方法\n}\n",
+    "harnessId": "OFFICIAL_MANUAL",
+    "publicTests": [],
+    "hiddenTests": [],
+    "timeLimitMs": 3000,
+    "outputLimitBytes": 1048576
+  },
+  "acmMode": {
+    "inputDescription": "一行字符串 s。",
+    "outputDescription": "输出最长长度。",
+    "mainTemplate": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        // 根据上方输入格式读取数据并输出答案\n    }\n}\n",
+    "publicTests": [
+      "tc-1",
+      "tc-2"
+    ],
+    "hiddenTests": [
+      "tc-3",
+      "tc-4"
+    ],
+    "timeLimitMs": 3000,
+    "outputLimitBytes": 1048576
+  },
+  "testCases": [
+    {
+      "id": "tc-1",
+      "visibility": "PUBLIC",
+      "input": "abcabcbb\n",
+      "expected": "3\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "BASIC"
+      ]
+    },
+    {
+      "id": "tc-2",
+      "visibility": "PUBLIC",
+      "input": "bbbbb\n",
+      "expected": "1\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "EDGE"
+      ]
+    },
+    {
+      "id": "tc-3",
+      "visibility": "HIDDEN",
+      "input": "pwwkew\n",
+      "expected": "3\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "EDGE"
+      ]
+    },
+    {
+      "id": "tc-4",
+      "visibility": "HIDDEN",
+      "input": "abba\n",
+      "expected": "2\n",
+      "comparison": "TRIM_LINES",
+      "tags": [
+        "EDGE"
+      ]
+    }
+  ],
+  "learningCard": {
+    "plainExplanation": "给定字符串，求不含重复字符的最长连续子串长度。",
+    "bruteForce": "直接枚举所有可能通常会产生重复计算；先写出暴力解，再找出可以复用的信息。",
+    "keyObservation": "右端扩展后，只移动左端恢复窗口合法性，左边界不能回退。",
+    "algorithmSteps": [
+      "右指针逐个加入字符",
+      "重复时更新左边界",
+      "记录最新位置并更新答案"
+    ],
+    "coreCode": "left = Math.max(left, lastIndex + 1);",
+    "pitfalls": [
+      "left 不能回退",
+      "窗口长度是 right - left + 1"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(k)"
+    },
+    "relatedProblemIds": []
+  },
+  "hints": [
+    {
+      "level": 1,
+      "content": "先写出暴力解会重复计算什么，再寻找可以维护的信息。"
+    },
+    {
+      "level": 2,
+      "content": "从滑动窗口的常见状态与不变量开始建模。"
+    },
+    {
+      "level": 3,
+      "content": "右端扩展后，只移动左端恢复窗口合法性，左边界不能回退。"
+    },
+    {
+      "level": 4,
+      "content": "右指针逐个加入字符 → 重复时更新左边界 → 记录最新位置并更新答案"
+    },
+    {
+      "level": 5,
+      "content": "left = Math.max(left, lastIndex + 1);"
+    },
+    {
+      "level": 6,
+      "content": "完整讲解已在学习卡中展开；官方完整题面与参考实现请通过题目链接核对。"
+    }
+  ],
+  "reviewCards": [
+    {
+      "id": "recall-1",
+      "type": "IDEA_RECALL",
+      "prompt": "不看标签，说明“无重复字符的最长子串”的题型、核心状态、不变量、易错点与复杂度。",
+      "rubric": [
+        "题型识别",
+        "核心状态",
+        "边界条件",
+        "复杂度"
+      ]
+    },
+    {
+      "id": "skeleton-1",
+      "type": "CODE_SKELETON",
+      "prompt": "根据学习卡补全或默写最关键的状态更新。",
+      "template": "left = Math.max(left, lastIndex + 1);",
+      "expectedConcepts": [
+        "右指针逐个加入字符",
+        "重复时更新左边界",
+        "记录最新位置并更新答案"
+      ]
+    }
+  ]
+}

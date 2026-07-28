@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+*.local
+data/database/*.db
+data/database/*.db-*
+data/backups/
+workspace/runs/
+workspace/recovery/
+logs/
+.vite/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
