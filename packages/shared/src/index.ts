@@ -186,11 +186,21 @@ export interface JudgeCaseResult {
 }
 
 export interface JudgeResult {
-  resultType: "PASSED" | "COMPILE_ERROR" | "WRONG_ANSWER" | "TIME_LIMIT" | "RUNTIME_ERROR" | "FORMAT_ERROR" | "SYSTEM_ERROR";
+  resultType: "PASSED" | "COMPILE_ERROR" | "WRONG_ANSWER" | "TIME_LIMIT" | "RUNTIME_ERROR" | "FORMAT_ERROR" | "UNVERIFIED" | "AI_REVIEWED" | "SYSTEM_ERROR";
   passedCount: number;
   totalCount: number;
   compileOutput?: string;
   cases: JudgeCaseResult[];
+  verification?: "LOCAL_TESTS" | "COMPILE_ONLY" | "AI_REVIEW";
+  review?: {
+    verdict: "LIKELY_CORRECT" | "NEEDS_CHANGES" | "UNCERTAIN";
+    confidence: number;
+    summary: string;
+    timeComplexity: string;
+    spaceComplexity: string;
+    evidence: string[];
+    risks: string[];
+  };
 }
 
 export const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));

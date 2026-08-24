@@ -124,6 +124,18 @@ const judgeReady = {
     time: "O(n)",
     space: "O(n)"
   },
+  11: {
+    summary: "给定一组非负高度，选择两条竖线，使它们与横轴围成的容器面积最大。",
+    input: "第一行是高度数量 n，第二行是 n 个非负整数 height[i]。",
+    output: "输出最大容器面积。",
+    examples: [["9\n1 8 6 2 5 4 8 3 7\n", "49\n"], ["2\n1 1\n", "1\n"], ["3\n1 2 1\n", "2\n"], ["5\n4 3 2 1 4\n", "16\n"]],
+    core: "ans = Math.max(ans, (right-left) * Math.min(height[left], height[right]));",
+    observation: "较矮边是面积瓶颈；移动较高边只会缩小宽度且无法提高有效高度，因此每轮移动较矮边。",
+    steps: ["从数组两端开始", "计算当前面积并更新答案", "移动较矮的一端", "直到指针相遇"],
+    pitfalls: ["面积要乘下标宽度", "移动较矮边而不是较高边", "循环条件使用 left < right"],
+    time: "O(n)",
+    space: "O(1)"
+  },
   283: {
     summary: "将数组中的所有零移动到末尾，同时保持非零元素相对顺序。",
     input: "第一行是 n，第二行是 n 个整数。",
@@ -196,6 +208,18 @@ const judgeReady = {
     time: "O(n)",
     space: "O(1)"
   },
+  101: {
+    summary: "给定二叉树的层序序列，判断它是否关于根节点中心轴镜像对称。",
+    input: "第一行是层序序列 token 数 n，第二行是 n 个节点值，空节点写 null。",
+    output: "对称输出 true，否则输出 false。",
+    examples: [["7\n1 2 2 3 4 4 3\n", "true\n"], ["7\n1 2 2 null 3 null 3\n", "false\n"], ["1\n1\n", "true\n"], ["7\n1 2 2 3 4 4 5\n", "false\n"]],
+    core: "return left.val == right.val && mirror(left.left, right.right) && mirror(left.right, right.left);",
+    observation: "镜像比较必须交叉：左节点的左子树对应右节点的右子树，左节点的右子树对应右节点的左子树。",
+    steps: ["比较根的左右子树", "先处理两个节点的空值和值", "递归比较外侧节点", "递归比较内侧节点"],
+    pitfalls: ["递归方向没有交叉", "访问 val 前未处理空节点", "只比较值而忽略结构"],
+    time: "O(n)",
+    space: "O(h)"
+  },
   70: {
     summary: "每次爬 1 或 2 个台阶，求到达第 n 阶的方法数。",
     input: "一个正整数 n。",
@@ -217,6 +241,46 @@ const topicName = {
   BACKTRACKING: "回溯", BINARY_SEARCH: "二分查找", HEAP: "堆",
   GREEDY: "贪心", DYNAMIC_PROGRAMMING: "动态规划", TECHNIQUE: "技巧与综合"
 };
+
+const symmetricAcmTemplate = `import java.util.*;
+
+public class Main {
+    static class TreeNode {
+        int val;
+        TreeNode left, right;
+        TreeNode(int val) { this.val = val; }
+    }
+
+    static boolean isSymmetric(TreeNode root) {
+        // Write your solution here
+        return false;
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int n = scanner.nextInt();
+        String[] values = new String[n];
+        for (int i = 0; i < n; i++) values[i] = scanner.next();
+        System.out.println(isSymmetric(build(values)));
+    }
+
+    static TreeNode build(String[] values) {
+        if (values.length == 0 || values[0].equals("null")) return null;
+        TreeNode root = new TreeNode(Integer.parseInt(values[0]));
+        Queue<TreeNode> queue = new ArrayDeque<>();
+        queue.offer(root);
+        int index = 1;
+        while (!queue.isEmpty() && index < values.length) {
+            TreeNode node = queue.poll();
+            if (index < values.length && !values[index].equals("null")) { node.left = new TreeNode(Integer.parseInt(values[index])); queue.offer(node.left); }
+            index++;
+            if (index < values.length && !values[index].equals("null")) { node.right = new TreeNode(Integer.parseInt(values[index])); queue.offer(node.right); }
+            index++;
+        }
+        return root;
+    }
+}
+`;
 
 const buildProblem = (row, index) => {
   const [leetcodeId, title, slug, track, difficulty] = row;
@@ -241,23 +305,56 @@ const buildProblem = (row, index) => {
     ? {
         inputDescription: ready.input,
         outputDescription: ready.output,
-        mainTemplate: "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        // 根据上方输入格式读取数据并输出答案\n    }\n}\n",
+        mainTemplate: leetcodeId === 101 ? symmetricAcmTemplate : "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        // 根据上方输入格式读取数据并输出答案\n    }\n}\n",
         publicTests: ["tc-1", "tc-2"],
         hiddenTests: ["tc-3", "tc-4"],
         timeLimitMs: 3000,
         outputLimitBytes: 1048576
       }
     : undefined;
-  const functionMode = {
-    className: "Solution",
-    methodSignature: "请按照官方题目要求实现目标方法",
-    userTemplate: "class Solution {\n    // 在这里实现官方题目要求的方法\n}\n",
-    harnessId: "OFFICIAL_MANUAL",
-    publicTests: [],
-    hiddenTests: [],
-    timeLimitMs: 3000,
-    outputLimitBytes: 1048576
-  };
+  const functionMode = leetcodeId === 1
+    ? {
+        className: "Solution",
+        methodSignature: "public int[] twoSum(int[] nums, int target)",
+        userTemplate: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[0];\n    }\n}\n",
+        harnessId: "TWO_SUM",
+        publicTests: ["tc-1", "tc-2"],
+        hiddenTests: ["tc-3", "tc-4"],
+        timeLimitMs: 3000,
+        outputLimitBytes: 1048576
+      }
+    : leetcodeId === 11
+      ? {
+          className: "Solution",
+          methodSignature: "public int maxArea(int[] height)",
+          userTemplate: "class Solution {\n    public int maxArea(int[] height) {\n        // Write your solution here\n        return 0;\n    }\n}\n",
+          harnessId: "CONTAINER_WATER",
+          publicTests: ["tc-1", "tc-2"],
+          hiddenTests: ["tc-3", "tc-4"],
+          timeLimitMs: 3000,
+          outputLimitBytes: 1048576
+        }
+    : leetcodeId === 101
+      ? {
+          className: "Solution",
+          methodSignature: "public boolean isSymmetric(TreeNode root)",
+          userTemplate: "class Solution {\n    public boolean isSymmetric(TreeNode root) {\n        // Write your solution here\n        return false;\n    }\n}\n",
+          harnessId: "SYMMETRIC_TREE",
+          publicTests: ["tc-1", "tc-2"],
+          hiddenTests: ["tc-3", "tc-4"],
+          timeLimitMs: 3000,
+          outputLimitBytes: 1048576
+        }
+    : {
+        className: "Solution",
+        methodSignature: "请按照官方题目要求实现目标方法",
+        userTemplate: "class Solution {\n    // 在这里实现官方题目要求的方法\n}\n",
+        harnessId: "OFFICIAL_MANUAL",
+        publicTests: [],
+        hiddenTests: [],
+        timeLimitMs: 3000,
+        outputLimitBytes: 1048576
+      };
   const supportedModes = ready ? ["ACM", "FUNCTION"] : ["FUNCTION"];
   return {
     schemaVersion: 1,
@@ -270,7 +367,7 @@ const buildProblem = (row, index) => {
     track,
     importance,
     coverageTarget,
-    defaultMode: ready ? "ACM" : "FUNCTION",
+    defaultMode: leetcodeId === 11 || leetcodeId === 101 ? "FUNCTION" : ready ? "ACM" : "FUNCTION",
     supportedModes,
     prerequisites: index === 0 ? [] : [rows[Math.max(0, index - 1)][3]],
     estimatedMinutes: {

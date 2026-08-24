@@ -23,6 +23,7 @@ start 35
 
 - 单用户、本地运行，无需注册或云服务。
 - PowerShell 风格终端 + Monaco Java 编辑器。
+- Java 关键字、常用集合/API 和算法片段自动补全。
 - 工作日短时训练与周末长时训练采用不同任务结构。
 - Function 和 ACM 两种训练模式。
 - 100 道 Hot 100 结构化学习数据。
@@ -182,8 +183,12 @@ AI_TIMEOUT_MS=40000
 ## 题库与判题边界
 
 - `data/problems` 包含 100 道题的本地改写摘要、专题、训练深度、学习卡、1—6 级提示和 Recall 卡。
-- 当前有 8 道基础题具备完整 ACM 公开/隐藏测试。
-- 其他题目已支持学习与官方提交闭环，其完整 Function Harness 和隐藏测试仍在逐步补齐。
+- 当前有 10 道基础题具备完整 ACM 公开/隐藏测试；“两数之和”“盛最多水的容器”和“对称二叉树”还支持 Function 本地测试。
+- Function 编译会兼容 LeetCode 常见的 `public class TreeNode/ListNode` 辅助定义，不再因为辅助类型与 `Solution.java` 文件名不同而误报编译错误。
+- 所有 Function 代码都会先使用 Java 17 编译；缺少可执行 Harness 时不会再报系统错误，而会明确显示“仅编译通过、正确性未验证”。
+- 对尚无本地测试的题，配置 AI 后执行 `submit` 会基于当前编辑器代码生成静态审查，包括实际算法、时空复杂度、代码证据和潜在反例；AI 审查不能替代真实测试。
+- Submit 静态审查默认使用 Fast 模型以降低等待时间；AI 超时时训练流程继续，并保留“正确性未验证”的诚实状态。
+- 判题卡会明确区分：`LOCAL_TESTS`（真实本地用例）、`COMPILE_ONLY`（仅编译）、`AI_REVIEW`（AI 静态审查）。
 - 本地 `submit` 通过不等同于 LeetCode 官方 Accepted。
 - 可以使用 `open` 打开官方题目，再通过 `result ac` 等命令记录官方结果。
 - 项目不会读取 LeetCode Cookie，也不会自动登录或代替用户提交。
@@ -221,4 +226,3 @@ npm.cmd run build
 项目已经具备可运行的本地 MVP：训练调度、复习、代码编辑、本地判题、统计、七日计划和 AI Provider 接入均可使用。
 
 当前最大的后续工作是为剩余题目逐步补齐高质量 Function Harness、ACM 适配和经参考实现验证的隐藏测试。
-

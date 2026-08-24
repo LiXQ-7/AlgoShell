@@ -57,11 +57,17 @@
   },
   "functionMode": {
     "className": "Solution",
-    "methodSignature": "请按照官方题目要求实现目标方法",
-    "userTemplate": "class Solution {\n    // 在这里实现官方题目要求的方法\n}\n",
-    "harnessId": "OFFICIAL_MANUAL",
-    "publicTests": [],
-    "hiddenTests": [],
+    "methodSignature": "public int[] twoSum(int[] nums, int target)",
+    "userTemplate": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[0];\n    }\n}\n",
+    "harnessId": "TWO_SUM",
+    "publicTests": [
+      "tc-1",
+      "tc-2"
+    ],
+    "hiddenTests": [
+      "tc-3",
+      "tc-4"
+    ],
     "timeLimitMs": 3000,
     "outputLimitBytes": 1048576
   },

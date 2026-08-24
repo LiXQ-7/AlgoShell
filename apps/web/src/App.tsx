@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import Editor from "@monaco-editor/react";
+import type { BeforeMount, OnMount } from "@monaco-editor/react";
 import {
   Bot, Braces, Check, ChevronDown, CircleDot, Clock3, Code2, Gauge, Lightbulb, Loader2,
   Play, RotateCcw, Send, Sparkles, Wifi, WifiOff
@@ -83,8 +85,84 @@ while (left < right) {
 return left;`
 };
 
+const storedShare = (key: string, fallback: number, minimum: number, maximum: number) => {
+  const parsed = Number(localStorage.getItem(key));
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
+};
+
 let lineCounter = 0;
 const line = (kind: TerminalLine["kind"], text: string): TerminalLine => ({ id: ++lineCounter, kind, text });
+
+let javaCompletionRegistered = false;
+const configureJavaLanguage: BeforeMount = (monaco) => {
+  if (javaCompletionRegistered) return;
+  javaCompletionRegistered = true;
+
+  const keywords = [
+    "public", "private", "protected", "class", "static", "final", "void", "int", "long", "double",
+    "boolean", "char", "String", "return", "if", "else", "for", "while", "switch", "case", "break",
+    "continue", "new", "null", "true", "false", "try", "catch", "throw", "throws", "extends", "implements"
+  ];
+  const classes = [
+    "Arrays", "Collections", "List", "ArrayList", "LinkedList", "Map", "HashMap", "TreeMap", "Set",
+    "HashSet", "TreeSet", "Queue", "Deque", "ArrayDeque", "PriorityQueue", "StringBuilder", "Math", "Integer"
+  ];
+  const snippets: Array<[string, string, string]> = [
+    ["fori", "for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${0}\n}", "Index-based for loop"],
+    ["foreach", "for (${1:int} ${2:value} : ${3:values}) {\n\t${0}\n}", "Enhanced for loop"],
+    ["while", "while (${1:condition}) {\n\t${0}\n}", "While loop"],
+    ["main", "public static void main(String[] args) throws Exception {\n\t${0}\n}", "Java entry point"],
+    ["solution", "class Solution {\n\tpublic ${1:int} ${2:solve}(${3}) {\n\t\t${0}\n\t}\n}", "LeetCode Solution class"],
+    ["hashmap", "Map<${1:Integer}, ${2:Integer}> ${3:map} = new HashMap<>();", "HashMap declaration"],
+    ["hashset", "Set<${1:Integer}> ${2:set} = new HashSet<>();", "HashSet declaration"],
+    ["deque", "Deque<${1:Integer}> ${2:queue} = new ArrayDeque<>();", "Deque / BFS queue"],
+    ["heap", "PriorityQueue<${1:Integer}> ${2:heap} = new PriorityQueue<>();", "Min heap"],
+    ["computeIfAbsent", "${1:map}.computeIfAbsent(${2:key}, k -> new ArrayList<>()).add(${3:value});", "Create a list and append"],
+    ["binarySearch", "int left = 0, right = ${1:n};\nwhile (left < right) {\n\tint mid = left + (right - left) / 2;\n\tif (${2:check(mid)}) right = mid;\n\telse left = mid + 1;\n}\n${0}", "Left-closed, right-open binary search"]
+  ];
+  const members: Array<[string, string, string]> = [
+    ["length", "length", "Array length"], ["length()", "length()", "String length"], ["size()", "size()", "Collection size"],
+    ["add()", "add(${1:value})", "Append to collection"], ["get()", "get(${1:key})", "Read by key or index"],
+    ["put()", "put(${1:key}, ${2:value})", "Store key/value"], ["containsKey()", "containsKey(${1:key})", "Map key check"],
+    ["contains()", "contains(${1:value})", "Membership check"], ["offer()", "offer(${1:value})", "Queue insertion"],
+    ["poll()", "poll()", "Queue removal"], ["peek()", "peek()", "Queue head"], ["sort()", "sort(${1:values})", "Sort values"],
+    ["fill()", "fill(${1:values}, ${2:value})", "Fill an array"], ["max()", "max(${1:a}, ${2:b})", "Maximum"],
+    ["min()", "min(${1:a}, ${2:b})", "Minimum"], ["charAt()", "charAt(${1:index})", "String character"],
+    ["substring()", "substring(${1:start}, ${2:end})", "String slice"]
+  ];
+
+  monaco.languages.registerCompletionItemProvider("java", {
+    triggerCharacters: ["."],
+    provideCompletionItems(model, position) {
+      const word = model.getWordUntilPosition(position);
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn
+      };
+      const suggestions = [
+        ...keywords.map((keyword) => ({
+          label: keyword, kind: monaco.languages.CompletionItemKind.Keyword, insertText: keyword,
+          detail: "Java keyword", range
+        })),
+        ...classes.map((className) => ({
+          label: className, kind: monaco.languages.CompletionItemKind.Class, insertText: className,
+          detail: "java.util / java.lang", range
+        })),
+        ...snippets.map(([label, insertText, detail]) => ({
+          label, kind: monaco.languages.CompletionItemKind.Snippet, insertText, detail, range,
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+        })),
+        ...members.map(([label, insertText, detail]) => ({
+          label, kind: monaco.languages.CompletionItemKind.Method, insertText, detail, range,
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+        }))
+      ];
+      return { suggestions };
+    }
+  });
+};
 
 export default function App() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -106,7 +184,14 @@ export default function App() {
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null);
   const [revealLearning, setRevealLearning] = useState(false);
   const [busy, setBusy] = useState("");
+  const [problemShare, setProblemShare] = useState(() => storedShare("algoshell.problemShare", 44, 28, 68));
+  const [workbenchShare, setWorkbenchShare] = useState(() => storedShare("algoshell.workbenchShare", 68, 45, 84));
   const saveTimer = useRef<number | null>(null);
+  const editorLoadSequence = useRef(0);
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
+  const editorHostRef = useRef<HTMLDivElement | null>(null);
+  const upperGridRef = useRef<HTMLDivElement | null>(null);
+  const workbenchRef = useRef<HTMLDivElement | null>(null);
   const currentTask = useMemo(
     () => session?.tasks.find((task) => task.status === "ACTIVE") ?? null,
     [session]
@@ -122,13 +207,15 @@ export default function App() {
   }, []);
 
   const openProblem = useCallback(async (problemId: string, preferredMode?: ProblemMode) => {
+    const sequence = ++editorLoadSequence.current;
     const payload = await api.problem(problemId);
-    setProblem(payload.problem);
-    setProgress(payload.progress);
     const nextMode = preferredMode && payload.problem.supportedModes.includes(preferredMode)
       ? preferredMode : payload.problem.defaultMode;
-    setMode(nextMode);
     const draft = await api.draft(problemId, nextMode);
+    if (sequence !== editorLoadSequence.current) return;
+    setProblem(payload.problem);
+    setProgress(payload.progress);
+    setMode(nextMode);
     setCode(draft.content);
     setView({ type: "problem" });
     setJudgeResult(null);
@@ -164,7 +251,7 @@ export default function App() {
   }, [append, syncSession]);
 
   useEffect(() => {
-    if (!problem || !code) return;
+    if (!problem) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       api.saveDraft(problem.id, mode, code).catch(() => append("error", "Draft autosave failed."));
@@ -177,12 +264,78 @@ export default function App() {
   const switchMode = useCallback(async (requested: ProblemMode) => {
     if (!problem) throw new Error("No active problem.");
     if (!problem.supportedModes.includes(requested)) throw new Error(`This problem does not support ${requested} mode.`);
-    await api.saveDraft(problem.id, mode, code);
-    const draft = await api.draft(problem.id, requested);
+    const sequence = ++editorLoadSequence.current;
+    const problemId = problem.id;
+    await api.saveDraft(problemId, mode, code);
+    const draft = await api.draft(problemId, requested);
+    if (sequence !== editorLoadSequence.current) return;
     setMode(requested);
     setCode(draft.content);
     append("success", `Mode switched to ${requested}. Drafts are saved independently.`);
   }, [append, code, mode, problem]);
+
+  const handleEditorMount: OnMount = useCallback((editor) => {
+    editorRef.current = editor;
+    requestAnimationFrame(() => {
+      editor.layout();
+      editor.focus();
+    });
+  }, []);
+
+  useEffect(() => {
+    const host = editorHostRef.current;
+    if (!host || !window.ResizeObserver) return;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => editorRef.current?.layout());
+    });
+    observer.observe(host);
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [problem, mode]);
+
+  useEffect(() => {
+    if (view.type !== "problem" || !problem) return;
+    const frame = window.requestAnimationFrame(() => {
+      editorRef.current?.layout();
+      editorRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mode, problem, view.type]);
+
+  useEffect(() => localStorage.setItem("algoshell.problemShare", String(problemShare)), [problemShare]);
+  useEffect(() => localStorage.setItem("algoshell.workbenchShare", String(workbenchShare)), [workbenchShare]);
+
+  const startResize = useCallback((axis: "horizontal" | "vertical", event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const move = (pointer: PointerEvent) => {
+      if (axis === "horizontal") {
+        const bounds = upperGridRef.current?.getBoundingClientRect();
+        if (!bounds) return;
+        setProblemShare(Math.min(68, Math.max(28, ((pointer.clientX - bounds.left) / bounds.width) * 100)));
+      } else {
+        const bounds = workbenchRef.current?.getBoundingClientRect();
+        if (!bounds) return;
+        setWorkbenchShare(Math.min(84, Math.max(45, ((pointer.clientY - bounds.top) / bounds.height) * 100)));
+      }
+    };
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      window.removeEventListener("blur", stop);
+      document.body.classList.remove("is-resizing-horizontal", "is-resizing-vertical");
+      editorRef.current?.layout();
+    };
+    document.body.classList.add(axis === "horizontal" ? "is-resizing-horizontal" : "is-resizing-vertical");
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop, { once: true });
+    window.addEventListener("pointercancel", stop, { once: true });
+    window.addEventListener("blur", stop, { once: true });
+  }, []);
 
   const runJudge = useCallback(async (action: "run" | "submit") => {
     if (!problem) throw new Error("No active problem.");
@@ -195,7 +348,11 @@ export default function App() {
       });
       setJudgeResult(result);
       setConsoleText(result.compileOutput || `${result.resultType}: ${result.passedCount}/${result.totalCount}`);
-      append(result.resultType === "PASSED" ? "success" : "error", `${action}: ${result.resultType} (${result.passedCount}/${result.totalCount})`);
+      const isFailure = ["COMPILE_ERROR", "WRONG_ANSWER", "TIME_LIMIT", "RUNTIME_ERROR", "FORMAT_ERROR", "SYSTEM_ERROR"].includes(result.resultType);
+      const detail = result.resultType === "AI_REVIEWED"
+        ? ` · ${result.review?.verdict.replaceAll("_", " ") ?? "UNCERTAIN"}, not Accepted`
+        : result.resultType === "UNVERIFIED" ? " · compile only, correctness unverified" : ` (${result.passedCount}/${result.totalCount})`;
+      append(isFailure ? "error" : result.resultType === "PASSED" ? "success" : "info", `${action}: ${result.resultType}${detail}`);
     } finally {
       setBusy("");
     }
@@ -204,6 +361,7 @@ export default function App() {
   const finishTask = useCallback(async () => {
     if (!currentTask) throw new Error("No active task.");
     if (currentTask.taskType.startsWith("REVIEW")) throw new Error("Rate this review from 1 to 5 before completing it.");
+    if (currentTask.taskType === "SUMMARY") throw new Error("Generate the daily summary to finish this session.");
     setBusy("complete");
     try {
       const result = await api.complete(currentTask.id, {
@@ -358,11 +516,22 @@ export default function App() {
       }
       if (name === "summary") {
         const period = args[0]?.toLowerCase() === "week" ? "week" : "day";
-        const data = await api.summary(period, true);
-        setView({ type: "data", title: `${period === "week" ? "Weekly" : "Daily"} debrief`, subtitle: `${data.source} coach`, data });
-        setCoachText(data.text);
-        setOutputTab("coach");
-        append("success", `${period} summary ready (${data.source}).`);
+        setBusy("summary");
+        try {
+          const data = await api.summary(period, true);
+          setView({ type: "data", title: `${period === "week" ? "Weekly" : "Daily"} debrief`, subtitle: `${data.source} coach`, data });
+          setCoachText(data.text);
+          setOutputTab("coach");
+          if (period === "day" && currentTask?.taskType === "SUMMARY") {
+            const result = await api.complete(currentTask.id, {});
+            append("success", `Daily summary ready (${data.source}) · today's session complete.`);
+            await syncSession(result.session);
+          } else {
+            append("success", `${period} summary ready (${data.source}).`);
+          }
+        } finally {
+          setBusy("");
+        }
         return;
       }
       if (name === "templates") {
@@ -445,7 +614,16 @@ export default function App() {
             </div>
           </div>
 
-          <div className="upper-grid">
+          <div
+            className="workbench-stack"
+            ref={workbenchRef}
+            style={{ gridTemplateRows: `minmax(260px, ${workbenchShare}fr) 7px minmax(110px, ${100 - workbenchShare}fr)` }}
+          >
+          <div
+            className="upper-grid"
+            ref={upperGridRef}
+            style={{ gridTemplateColumns: `minmax(280px, ${problemShare}%) 7px minmax(380px, 1fr)` }}
+          >
             <section className="content-stage">
               {view.type === "problem" && problem ? (
                 <ProblemPane problem={problem} progress={progress} task={currentTask} revealLearning={revealLearning} onCommand={(command) => void executeCommand(command)} />
@@ -460,26 +638,58 @@ export default function App() {
               )}
             </section>
 
+            <div
+              className="resize-handle resize-handle-horizontal"
+              role="separator"
+              aria-label="调整题目与答题区宽度"
+              aria-orientation="vertical"
+              title="拖动调整宽度；双击恢复默认"
+              onPointerDown={(event) => startResize("horizontal", event)}
+              onDoubleClick={() => setProblemShare(44)}
+            ><span /></div>
+
             <section className="editor-stage">
               <div className="editor-header">
                 <div className="file-tab"><span className="java-icon">J</span>{mode === "ACM" ? "Main.java" : "Solution.java"}<i>●</i></div>
-                <button className="mode-switch" disabled={!problem} onClick={() => problem && void switchMode(mode === "ACM" ? "FUNCTION" : "ACM").catch((error) => append("error", error.message))}>
+                <button
+                  className="mode-switch"
+                  disabled={!problem || problem.supportedModes.length < 2}
+                  title={!problem ? "No active problem" : problem.supportedModes.length < 2 ? `本题仅提供 ${mode} 模板` : `切换到 ${mode === "ACM" ? "FUNCTION" : "ACM"}`}
+                  onClick={() => problem && void switchMode(problem.supportedModes.find((candidate) => candidate !== mode) ?? mode).catch((error) => append("error", error.message))}
+                >
                   {mode}<ChevronDown size={13} />
                 </button>
               </div>
-              <Editor
-                height="100%"
-                language="java"
-                theme="vs-dark"
-                value={code}
-                onChange={(value) => setCode(value || "")}
-                options={{
-                  fontFamily: "'JetBrains Mono', 'Cascadia Code', monospace",
-                  fontSize: 14, lineHeight: 23, minimap: { enabled: false }, scrollBeyondLastLine: false,
-                  padding: { top: 16 }, renderLineHighlight: "gutter", cursorBlinking: "smooth",
-                  smoothScrolling: true, bracketPairColorization: { enabled: true }, automaticLayout: true
-                }}
-              />
+              <div className="monaco-host" ref={editorHostRef}>
+                <Editor
+                  key={`${problem?.id ?? "empty"}:${mode}`}
+                  path={`file:///algoshell/${problem?.id ?? "empty"}/${mode}/${mode === "ACM" ? "Main.java" : "Solution.java"}`}
+                  height="100%"
+                  language="java"
+                  theme="vs-dark"
+                  value={code}
+                  beforeMount={configureJavaLanguage}
+                  onMount={handleEditorMount}
+                  onChange={(value) => setCode(value ?? "")}
+                  keepCurrentModel={false}
+                  saveViewState={false}
+                  loading={<div className="editor-loading">Loading Java editor…</div>}
+                  options={{
+                    fontFamily: "'JetBrains Mono', 'Cascadia Code', monospace",
+                    fontSize: 14, lineHeight: 23, minimap: { enabled: false }, scrollBeyondLastLine: false,
+                    padding: { top: 16 }, renderLineHighlight: "all", cursorBlinking: "smooth",
+                    cursorSmoothCaretAnimation: "on", smoothScrolling: true,
+                    bracketPairColorization: { enabled: true }, automaticLayout: false,
+                    quickSuggestions: { other: true, comments: false, strings: false },
+                    suggestOnTriggerCharacters: true, wordBasedSuggestions: "currentDocument",
+                    parameterHints: { enabled: true }, tabCompletion: "on", snippetSuggestions: "top",
+                    suggestSelection: "first", acceptSuggestionOnEnter: "on",
+                    suggest: { showKeywords: true, showSnippets: true, showMethods: true, showClasses: true },
+                    detectIndentation: true, formatOnPaste: true,
+                    fixedOverflowWidgets: true, renderWhitespace: "selection"
+                  }}
+                />
+              </div>
               <div className="editor-actions">
                 <button className="ghost-action" onClick={() => void executeCommand("hint")} disabled={!problem || Boolean(busy)}><Lightbulb size={15} /> Hint</button>
                 <button className="ghost-action" onClick={() => void executeCommand("explain")} disabled={!problem || Boolean(busy)}><Sparkles size={15} /> Explain</button>
@@ -490,9 +700,20 @@ export default function App() {
             </section>
           </div>
 
-          <OutputPanel tab={outputTab} onTab={setOutputTab} consoleText={consoleText} judge={judgeResult} learningText={learningText} coachText={coachText} />
+          <div
+            className="resize-handle resize-handle-vertical"
+            role="separator"
+            aria-label="调整答题区与输出区高度"
+            aria-orientation="horizontal"
+            title="拖动调整高度；双击恢复默认"
+            onPointerDown={(event) => startResize("vertical", event)}
+            onDoubleClick={() => setWorkbenchShare(68)}
+          ><span /></div>
 
-          {currentTask && currentTask.taskType !== "SUMMARY" && (
+          <OutputPanel tab={outputTab} onTab={setOutputTab} consoleText={consoleText} judge={judgeResult} learningText={learningText} coachText={coachText} />
+          </div>
+
+          {currentTask && (
             <div className="completion-bar">
               {currentTask.taskType.startsWith("REVIEW") ? (
                 <>
@@ -500,6 +721,13 @@ export default function App() {
                   <div className="rating-row">
                     {[1, 2, 3, 4, 5].map((rating) => <button key={rating} disabled={Boolean(busy)} onClick={() => void gradeReview(rating)}>{rating}<small>{["forgot", "type only", "idea", "hesitant", "complete"][rating - 1]}</small></button>)}
                   </div>
+                </>
+              ) : currentTask.taskType === "SUMMARY" ? (
+                <>
+                  <span><Sparkles size={15} /> 生成今日训练总结，并完成本次训练。</span>
+                  <button disabled={Boolean(busy)} onClick={() => void executeCommand("summary")}>
+                    {busy === "summary" ? <Loader2 className="spin" size={15} /> : <Check size={15} />} 生成总结并完成
+                  </button>
                 </>
               ) : (
                 <>

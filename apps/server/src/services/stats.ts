@@ -68,20 +68,69 @@ export const buildSummary = (period: "day" | "week") => {
   const since = new Date(Date.now() - days * 86400000).toISOString();
   const sessions = db.prepare("SELECT * FROM training_sessions WHERE created_at>=?").all(since) as Array<{ status: string }>;
   const tasks = db.prepare("SELECT * FROM session_tasks WHERE completed_at>=?").all(since) as Array<{ task_type: string; status: string; highest_hint_level: number }>;
-  const attempts = db.prepare("SELECT * FROM attempts WHERE created_at>=?").all(since) as Array<{ result_type: string; error_type: string | null }>;
-  const completed = tasks.filter((task) => task.status === "COMPLETED");
+  const attempts = db.prepare(`
+    SELECT a.*,
+      COALESCE(cs.content, (
+        SELECT fallback.content FROM code_snapshots fallback
+        WHERE fallback.problem_id=a.problem_id AND fallback.mode=a.mode AND fallback.created_at<=a.created_at
+        ORDER BY fallback.created_at DESC LIMIT 1
+      )) AS code_content
+    FROM attempts a
+    LEFT JOIN code_snapshots cs ON cs.id=a.code_snapshot_id
+    WHERE a.created_at>=?
+    ORDER BY a.created_at DESC
+  `).all(since) as Array<{
+    problem_id: string; mode: string; action: string; result_type: string; error_type: string | null;
+    passed_count: number; total_count: number; failure_detail_json: string | null; code_content: string | null; created_at: string;
+  }>;
+  const completed = tasks.filter((task) => task.status === "COMPLETED" && task.task_type !== "SUMMARY");
+  const completedSummaries = tasks.filter((task) => task.status === "COMPLETED" && task.task_type === "SUMMARY").length;
   const counts = {
     solve: completed.filter((task) => task.task_type === "NEW_SOLVE").length,
     guided: completed.filter((task) => task.task_type === "NEW_GUIDED").length,
     learn: completed.filter((task) => task.task_type === "NEW_LEARN").length,
     reviews: completed.filter((task) => task.task_type.startsWith("REVIEW")).length
   };
-  const errors = attempts.filter((attempt) => attempt.result_type !== "PASSED").map((attempt) => attempt.error_type).filter(Boolean);
+  const codeFailureTypes = new Set(["COMPILE_ERROR", "WRONG_ANSWER", "TIME_LIMIT", "RUNTIME_ERROR", "FORMAT_ERROR"]);
+  const errors = attempts.filter((attempt) => codeFailureTypes.has(attempt.result_type)).map((attempt) => attempt.error_type).filter(Boolean);
   const topError = errors.length ? [...new Set(errors)].sort((a, b) => errors.filter((x) => x === b).length - errors.filter((x) => x === a).length)[0] : null;
   const avgHint = completed.length ? completed.reduce((sum, task) => sum + task.highest_hint_level, 0) / completed.length : 0;
+  const latestByProblem = new Map<string, typeof attempts[number]>();
+  for (const attempt of attempts) if (!latestByProblem.has(attempt.problem_id)) latestByProblem.set(attempt.problem_id, attempt);
+  const codeReviews = [...latestByProblem.values()].slice(0, 6).map((attempt) => {
+    const problem = problemStore.get(attempt.problem_id);
+    let detail: { verification?: string; review?: unknown } = {};
+    try { detail = JSON.parse(attempt.failure_detail_json || "{}"); } catch { /* keep empty detail */ }
+    return {
+      problemId: attempt.problem_id,
+      title: problem?.title ?? attempt.problem_id,
+      mode: attempt.mode,
+      action: attempt.action,
+      resultType: attempt.result_type,
+      verification: detail.verification ?? (attempt.result_type === "PASSED" ? "LOCAL_TESTS" : "UNKNOWN"),
+      passed: `${attempt.passed_count ?? 0}/${attempt.total_count ?? 0}`,
+      expectedComplexity: problem?.learningCard.complexity ?? null,
+      expectedObservation: problem?.learningCard.keyObservation ?? null,
+      methodSignature: problem?.functionMode?.methodSignature ?? null,
+      priorAiReview: detail.review ?? null,
+      code: (attempt.code_content || "").slice(0, 6000)
+    };
+  });
+  const platformIssueCount = attempts.filter((attempt) => attempt.result_type === "SYSTEM_ERROR" || attempt.result_type === "UNVERIFIED").length;
+  const locallyPassedCount = attempts.filter((attempt) => attempt.result_type === "PASSED").length;
+  const aiReviewedCount = attempts.filter((attempt) => attempt.result_type === "AI_REVIEWED").length;
+  const practicedNames = codeReviews.map((item) => item.title);
   return {
-    period, sessions: sessions.length, completedTasks: completed.length, ...counts,
-    attempts: attempts.length, topError, averageHintLevel: Number(avgHint.toFixed(1)),
-    text: `本${period === "week" ? "周" : "日"}完成 ${completed.length} 个任务：Solve ${counts.solve}、Guided ${counts.guided}、Learn ${counts.learn}、复习 ${counts.reviews}。${topError ? `最高频错误为 ${topError}。` : "当前没有已记录的判题错误。"}平均最高提示等级 ${avgHint.toFixed(1)}。`
+    period, sessions: sessions.length, completedTasks: completed.length, completedSummaries, ...counts,
+    newCoverageTasks: counts.solve + counts.guided + counts.learn,
+    attempts: attempts.length, locallyPassedCount, aiReviewedCount, platformIssueCount,
+    topError, averageHintLevel: Number(avgHint.toFixed(1)), practicedProblems: practicedNames,
+    text: `本${period === "week" ? "周" : "日"}完成 ${completed.length} 个有效训练任务：Solve ${counts.solve}、Guided ${counts.guided}、Learn ${counts.learn}、复习 ${counts.reviews}。${practicedNames.length ? `涉及题目：${practicedNames.join("、")}。` : "尚无可分析的代码提交。"}${topError ? `真实代码错误最高频为 ${topError}。` : "当前没有已记录的代码错误。"}${platformIssueCount ? `另有 ${platformIssueCount} 次平台能力缺口，已与用户代码错误分开。` : ""}`,
+    analysisContext: {
+      taskCounts: { ...counts, completedTasks: completed.length, completedSummaries },
+      attemptCounts: { total: attempts.length, locallyPassedCount, aiReviewedCount, platformIssueCount },
+      averageHintLevel: Number(avgHint.toFixed(1)),
+      actualCodeSubmissions: codeReviews
+    }
   };
 };

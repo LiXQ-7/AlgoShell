@@ -305,15 +305,23 @@ export const getDraft = (problemId: string, mode: ProblemMode) => {
   return row ? { content: row.content, updatedAt: row.created_at } : null;
 };
 
+export const getLatestCodeSnapshotId = (problemId: string, mode: ProblemMode) => {
+  const row = db.prepare(
+    "SELECT id FROM code_snapshots WHERE problem_id=? AND mode=? ORDER BY created_at DESC LIMIT 1"
+  ).get(problemId, mode) as { id: string } | undefined;
+  return row?.id ?? null;
+};
+
 export const recordAttempt = (input: {
   taskId: string | null; problemId: string; mode: ProblemMode; action: string; resultType: string;
   passedCount: number; totalCount: number; durationMs: number; errorType?: string; detail?: unknown;
+  codeSnapshotId?: string | null;
 }) => {
   const id = newId();
   db.prepare(`INSERT INTO attempts(
-    id,session_task_id,problem_id,mode,action,result_type,passed_count,total_count,duration_ms,error_type,failure_detail_json,created_at
-  ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-    id, input.taskId, input.problemId, input.mode, input.action, input.resultType, input.passedCount,
+    id,session_task_id,problem_id,mode,action,code_snapshot_id,result_type,passed_count,total_count,duration_ms,error_type,failure_detail_json,created_at
+  ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+    id, input.taskId, input.problemId, input.mode, input.action, input.codeSnapshotId ?? null, input.resultType, input.passedCount,
     input.totalCount, input.durationMs, input.errorType ?? null, JSON.stringify(input.detail ?? {}), now()
   );
   return id;

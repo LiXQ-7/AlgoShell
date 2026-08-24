@@ -37,6 +37,8 @@ export const callAi = async (task: AiTask, messages: Array<{ role: "system" | "u
   if (!config.ai.configured) {
     throw Object.assign(new Error("AI Provider 未配置，已使用本地内容"), { code: "AI_NOT_CONFIGURED" });
   }
+  // Review is latency-sensitive and already constrained by a strict JSON schema.
+  // Use the fast model so Submit does not wait on a reasoning-model timeout.
   const smart = task === "DIAGNOSE" || task === "SUMMARY";
   const model = smart ? config.ai.smartModel : config.ai.fastModel;
   const started = Date.now();

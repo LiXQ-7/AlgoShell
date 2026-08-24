@@ -13,7 +13,8 @@
   "coverageTarget": "SOLVE",
   "defaultMode": "FUNCTION",
   "supportedModes": [
-    "FUNCTION"
+    "FUNCTION",
+    "ACM"
   ],
   "prerequisites": [
     "TWO_POINTERS"
@@ -30,76 +31,135 @@
     "contentPolicy": "LOCALLY_AUTHORED_SUMMARY"
   },
   "statement": {
-    "summary": "围绕“盛最多水的容器”训练双指针中的典型建模、边界处理与代码实现。",
-    "descriptionMarkdown": "围绕“盛最多水的容器”训练双指针中的典型建模、边界处理与代码实现。\n\n本工具使用本地改写摘要。完整约束、特殊数据结构定义与更多示例请点击“打开 LeetCode”查看官方题面。",
+    "summary": "给定一组非负高度，选择两条竖线，使它们与横轴围成的容器面积最大。",
+    "descriptionMarkdown": "数组下标表示竖线的横坐标，数组值表示高度。选择下标 i 和 j 后，容器宽度为 |j-i|，有效高度由较短竖线决定。请返回所有选择中的最大面积。",
     "constraints": [
-      "具体数据范围以官方题面为准"
+      "2 <= height.length <= 100000",
+      "0 <= height[i] <= 10000"
     ],
     "examples": [
       {
-        "input": "请参考官方题面中的示例",
-        "output": "按题意返回结果",
-        "explanation": "本地题面采用摘要，复杂结构题建议使用 Function 模式。"
+        "input": "9\n1 8 6 2 5 4 8 3 7",
+        "output": "49",
+        "explanation": "下标 1 和 8 的宽度为 7，较短高度为 7，面积为 49。"
+      },
+      {
+        "input": "2\n1 1",
+        "output": "1"
       }
     ]
   },
   "functionMode": {
     "className": "Solution",
-    "methodSignature": "请按照官方题目要求实现目标方法",
-    "userTemplate": "class Solution {\n    // 在这里实现官方题目要求的方法\n}\n",
-    "harnessId": "OFFICIAL_MANUAL",
-    "publicTests": [],
-    "hiddenTests": [],
+    "methodSignature": "public int maxArea(int[] height)",
+    "userTemplate": "class Solution {\n    public int maxArea(int[] height) {\n        // Write your solution here\n        return 0;\n    }\n}\n",
+    "harnessId": "CONTAINER_WATER",
+    "publicTests": [
+      "tc-1",
+      "tc-2"
+    ],
+    "hiddenTests": [
+      "tc-3",
+      "tc-4"
+    ],
     "timeLimitMs": 3000,
     "outputLimitBytes": 1048576
   },
-  "testCases": [],
-  "learningCard": {
-    "plainExplanation": "先把“盛最多水的容器”翻译成可维护的状态，再决定每一步如何推进。",
-    "bruteForce": "直接枚举所有可能通常会产生重复计算；先写出暴力解，再找出可以复用的信息。",
-    "keyObservation": "双指针题的关键是明确状态含义、状态变化条件和不变量。",
-    "algorithmSteps": [
-      "识别输入输出与目标",
-      "定义核心状态或数据结构",
-      "按不变量推进并处理边界",
-      "分析复杂度并用样例验证"
+  "acmMode": {
+    "inputDescription": "第一行是高度数量 n，第二行是 n 个非负整数 height[i]。",
+    "outputDescription": "输出最大容器面积。",
+    "mainTemplate": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        int n = scanner.nextInt();\n        int[] height = new int[n];\n        for (int i = 0; i < n; i++) height[i] = scanner.nextInt();\n        // 计算并输出答案\n    }\n}\n",
+    "publicTests": [
+      "tc-1",
+      "tc-2"
     ],
-    "coreCode": "// 先写清状态定义，再完成核心转移",
+    "hiddenTests": [
+      "tc-3",
+      "tc-4"
+    ],
+    "timeLimitMs": 3000,
+    "outputLimitBytes": 1048576
+  },
+  "testCases": [
+    {
+      "id": "tc-1",
+      "visibility": "PUBLIC",
+      "input": "9\n1 8 6 2 5 4 8 3 7\n",
+      "expected": "49\n",
+      "comparison": "TRIM_LINES",
+      "tags": ["example", "two-pointers"]
+    },
+    {
+      "id": "tc-2",
+      "visibility": "PUBLIC",
+      "input": "2\n1 1\n",
+      "expected": "1\n",
+      "comparison": "TRIM_LINES",
+      "tags": ["minimum-size"]
+    },
+    {
+      "id": "tc-3",
+      "visibility": "HIDDEN",
+      "input": "3\n1 2 1\n",
+      "expected": "2\n",
+      "comparison": "TRIM_LINES",
+      "tags": ["symmetric"]
+    },
+    {
+      "id": "tc-4",
+      "visibility": "HIDDEN",
+      "input": "5\n4 3 2 1 4\n",
+      "expected": "16\n",
+      "comparison": "TRIM_LINES",
+      "tags": ["wide-container"]
+    }
+  ],
+  "learningCard": {
+    "plainExplanation": "面积由宽度和两端较矮高度共同决定。从最宽的两端开始；要获得更大面积，只可能移动较矮的一端，尝试找到更高的边。",
+    "bruteForce": "枚举所有左右端点需要 O(n²) 时间。每一对的面积是 (right-left) * min(height[left], height[right])。",
+    "keyObservation": "当两端固定时，较矮边是面积瓶颈。若移动较高边，宽度变小且有效高度不会超过原较矮边，不可能更优，因此应移动较矮边。",
+    "algorithmSteps": [
+      "令 left=0、right=n-1，从最大宽度开始",
+      "用 (right-left) * min(height[left], height[right]) 更新最大面积",
+      "比较两端高度，移动较矮的一端",
+      "直到 left 与 right 相遇"
+    ],
+    "coreCode": "while (left < right) {\n    ans = Math.max(ans, (right - left) * Math.min(height[left], height[right]));\n    if (height[left] < height[right]) left++;\n    else right--;\n}",
     "pitfalls": [
-      "只记模板而没有解释不变量",
-      "忽略空值、下标或重复元素",
-      "复杂度分析与实现不一致"
+      "误移动较高的一端，无法排除不可能更优的状态",
+      "面积忘记乘宽度 right-left",
+      "循环条件写成 left <= right 导致无意义的同点计算"
     ],
     "complexity": {
-      "time": "依具体解法而定",
-      "space": "依具体解法而定"
+      "time": "O(n)",
+      "space": "O(1)"
     },
     "relatedProblemIds": []
   },
   "hints": [
     {
       "level": 1,
-      "content": "先写出暴力解会重复计算什么，再寻找可以维护的信息。"
+      "content": "你当前选择的两条边中，哪一条限制了水面高度？移动哪一条才可能提高这个限制？"
     },
     {
       "level": 2,
-      "content": "从双指针的常见状态与不变量开始建模。"
+      "content": "从数组两端使用双指针。每轮计算面积后，只移动高度较小的一端。"
     },
     {
       "level": 3,
-      "content": "列出核心状态、更新时机和循环不变量。"
+      "content": "维护 left、right 和 ans；面积为 (right-left) * min(height[left], height[right])。"
     },
     {
       "level": 4,
-      "content": "定义状态 → 逐步更新 → 输出结果"
+      "content": "初始化两端指针；循环中先更新 ans，再根据两端高度执行 left++ 或 right--。"
     },
     {
       "level": 5,
-      "content": "// 根据学习卡补全核心代码"
+      "content": "while (left < right) {\n    ans = Math.max(ans, (right-left) * Math.min(height[left], height[right]));\n    if (height[left] < height[right]) left++; else right--;\n}"
     },
     {
       "level": 6,
-      "content": "完整讲解已在学习卡中展开；官方完整题面与参考实现请通过题目链接核对。"
+      "content": "双指针解法为 O(n) 时间、O(1) 额外空间。正确性来自：移动较高边只会缩小宽度，且短板不会提高，因此可安全排除。"
     }
   ],
   "reviewCards": [

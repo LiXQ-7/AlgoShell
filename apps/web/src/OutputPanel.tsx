@@ -11,6 +11,8 @@ export function OutputPanel(props: {
   learningText: string;
   coachText: string;
 }) {
+  const reviewed = props.judge?.resultType === "AI_REVIEWED";
+  const unverified = props.judge?.resultType === "UNVERIFIED";
   const tabs: Array<{ id: OutputTab; label: string; icon: typeof ScrollText }> = [
     { id: "console", label: "Console", icon: ScrollText },
     { id: "tests", label: "Tests", icon: FlaskConical },
@@ -29,11 +31,24 @@ export function OutputPanel(props: {
         {props.tab === "console" && <pre className="console-output">{props.consoleText || "Ready. Use Ctrl+Enter or type `run`."}</pre>}
         {props.tab === "tests" && (
           props.judge ? <div className="test-results">
-            <div className={`result-banner ${props.judge.resultType === "PASSED" ? "passed" : "failed"}`}>
-              {props.judge.resultType === "PASSED" ? <CircleCheck /> : <CircleX />}
-              <div><strong>{props.judge.resultType.replaceAll("_", " ")}</strong><span>{props.judge.passedCount} / {props.judge.totalCount} tests passed</span></div>
+            <div className={`result-banner ${props.judge.resultType === "PASSED" ? "passed" : reviewed ? "reviewed" : unverified ? "unverified" : "failed"}`}>
+              {props.judge.resultType === "PASSED" ? <CircleCheck /> : reviewed || unverified ? <Bot /> : <CircleX />}
+              <div>
+                <strong>{reviewed ? `AI REVIEW · ${props.judge.review?.verdict.replaceAll("_", " ")}` : unverified ? "COMPILE ONLY · UNVERIFIED" : props.judge.resultType.replaceAll("_", " ")}</strong>
+                <span>{reviewed
+                  ? `静态审查置信度 ${Math.round((props.judge.review?.confidence ?? 0) * 100)}%，不等同于 Accepted`
+                  : unverified ? "Java 编译通过，但没有本地测试证明正确性" : `${props.judge.passedCount} / ${props.judge.totalCount} tests passed`}</span>
+              </div>
             </div>
             {props.judge.compileOutput && <pre>{props.judge.compileOutput}</pre>}
+            {props.judge.review && (
+              <div className="ai-review-result">
+                <h4>{props.judge.review.summary}</h4>
+                <div className="complexity-row"><span>TIME <b>{props.judge.review.timeComplexity}</b></span><span>SPACE <b>{props.judge.review.spaceComplexity}</b></span></div>
+                {props.judge.review.evidence.length > 0 && <><strong>代码证据</strong><ul>{props.judge.review.evidence.map((item, index) => <li key={`e-${index}`}>{item}</li>)}</ul></>}
+                {props.judge.review.risks.length > 0 && <><strong>风险与反例</strong><ul>{props.judge.review.risks.map((item, index) => <li key={`r-${index}`}>{item}</li>)}</ul></>}
+              </div>
+            )}
             {props.judge.cases.map((item) => (
               <details key={item.id} open={!item.passed}>
                 <summary>{item.passed ? "✓" : "×"} {item.id} <time>{item.durationMs}ms</time></summary>

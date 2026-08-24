@@ -8,7 +8,7 @@ import { config, redact } from "./config";
 import { createDailyBackup } from "./db/backup";
 import { db, getAppConfig, patchAppConfig } from "./db/database";
 import {
-  activateTask, completeTask, createSession, getAllProgress, getDraft, getProgress, getTodaySession,
+  activateTask, completeTask, createSession, getAllProgress, getDraft, getLatestCodeSnapshotId, getProgress, getTodaySession,
   newId, recordAttempt, recordLearningEvent, recordOfficialResult, recordReview, saveDraft, saveNote,
   setHintLevel, skipTask, replaceUntouchedSession
 } from "./db/repository";
@@ -28,12 +28,27 @@ const localDate = () => {
   return shifted.toISOString().slice(0, 10);
 };
 
-let environment = { available: false, version: null as string | null };
+let environment = { available: false, version: null as string | null, reason: "正在检测 Java" as string | null };
 detectJava().then((result) => { environment = result; }).catch(() => undefined);
 createDailyBackup().catch((error) => console.warn("[DATABASE] Backup failed:", redact(String(error))));
 
 const asyncRoute = (handler: (request: Request, response: Response, next: NextFunction) => Promise<unknown>) =>
   (request: Request, response: Response, next: NextFunction) => void handler(request, response, next).catch(next);
+
+const AiCodeReviewSchema = z.object({
+  verdict: z.enum(["LIKELY_CORRECT", "NEEDS_CHANGES", "UNCERTAIN"]),
+  confidence: z.number().min(0).max(1),
+  summary: z.string().min(1).max(1200),
+  timeComplexity: z.string().min(1).max(120),
+  spaceComplexity: z.string().min(1).max(120),
+  evidence: z.array(z.string().max(500)).max(8).default([]),
+  risks: z.array(z.string().max(500)).max(8).default([])
+});
+
+const parseAiJson = (content: string) => {
+  const cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  return JSON.parse(cleaned);
+};
 
 app.get("/api/health", (_request, response) => {
   response.json({
@@ -176,15 +191,67 @@ app.post("/api/judge/:action", asyncRoute(async (request, response) => {
   }).parse(request.body);
   const problem = problemStore.get(body.problemId);
   if (!problem) return response.status(404).json({ code: "PROBLEM_NOT_FOUND" });
-  if (!environment.available) return response.status(503).json({ code: "JAVA_UNAVAILABLE", message: "需要 Java 17 或更高版本才能判题" });
+  if (!environment.available) return response.status(503).json({
+    code: "JAVA_UNAVAILABLE",
+    message: environment.reason || "需要完整的 Java 17 JDK（java + javac）才能判题"
+  });
   saveDraft(body.problemId, body.mode, body.code, action.toUpperCase());
+  const codeSnapshotId = getLatestCodeSnapshotId(body.problemId, body.mode);
   const started = Date.now();
-  const result = await judgeJava(problem, body.mode, body.code, action === "run" ? "PUBLIC" : "HIDDEN");
+  let result = await judgeJava(problem, body.mode, body.code, action === "run" ? "PUBLIC" : "HIDDEN");
+  if (action === "submit" && result.resultType === "UNVERIFIED" && config.ai.configured) {
+    try {
+      const ai = await callAi("REVIEW", [
+        {
+          role: "system",
+          content: [
+            "你是严谨的 Java 算法代码审查器。只返回 JSON。",
+            "这不是在线判题：不得声称 Accepted，也不得把缺少本地 Harness 当作用户错误。",
+            "必须直接分析给出的代码：识别其算法、用代码中的循环/数据结构推导实际时间和空间复杂度、检查边界和潜在反例。",
+            "提出风险前必须按控制流实际走到出错语句，并给出最小反例和具体表达式；无法证明会失败时 risks 返回空数组，禁止猜测。",
+            "verdict 只能是 LIKELY_CORRECT、NEEDS_CHANGES、UNCERTAIN；证据不足时必须 UNCERTAIN。",
+            "字段：verdict, confidence(0-1), summary, timeComplexity, spaceComplexity, evidence(string[]), risks(string[])。"
+          ].join("\n")
+        },
+        {
+          role: "user",
+          content: [
+            `题目：${problem.title}（LeetCode ${problem.leetcodeId}）`,
+            `题意摘要：${problem.statement.summary}`,
+            `方法签名：${problem.functionMode?.methodSignature || "未结构化"}`,
+            `预期关键观察：${problem.learningCard.keyObservation}`,
+            `参考复杂度：时间 ${problem.learningCard.complexity.time}，空间 ${problem.learningCard.complexity.space}`,
+            `Java 17 编译结果：${result.compileOutput || "编译通过"}`,
+            `用户代码：\n${body.code.slice(0, 20000)}`
+          ].join("\n\n")
+        }
+      ]);
+      const review = AiCodeReviewSchema.parse(parseAiJson(ai.content));
+      result = {
+        ...result,
+        resultType: "AI_REVIEWED" as const,
+        verification: "AI_REVIEW" as const,
+        review,
+        compileOutput: "Java 17 编译通过；由于该题暂无本地测试，以下为 AI 静态代码审查，不等同于 LeetCode Accepted。"
+      };
+    } catch (error) {
+      result = {
+        ...result,
+        compileOutput: "Java 17 编译通过；当前题暂无本地测试。AI 静态审查暂时未返回，正确性仍未验证，可稍后重试 Submit。"
+      };
+    }
+  }
+  const codeFailureTypes = new Set(["COMPILE_ERROR", "WRONG_ANSWER", "TIME_LIMIT", "RUNTIME_ERROR", "FORMAT_ERROR"]);
   recordAttempt({
     taskId: body.taskId ?? null, problemId: body.problemId, mode: body.mode, action: action.toUpperCase(),
     resultType: result.resultType, passedCount: result.passedCount, totalCount: result.totalCount,
-    durationMs: Date.now() - started, errorType: result.resultType === "PASSED" ? undefined : result.resultType,
-    detail: { cases: result.cases.map((item) => ({ id: item.id, passed: item.passed, error: item.error })) }
+    durationMs: Date.now() - started, errorType: codeFailureTypes.has(result.resultType) ? result.resultType : undefined,
+    codeSnapshotId,
+    detail: {
+      verification: result.verification,
+      review: result.review,
+      cases: result.cases.map((item) => ({ id: item.id, passed: item.passed, error: item.error }))
+    }
   });
   return response.json(result);
 }));
@@ -205,8 +272,8 @@ app.post("/api/hints", asyncRoute(async (request, response) => {
       ? "不得说出算法名称、伪代码或代码，80字以内。"
       : body.level === 2 ? "可说明算法名称，但不得给出完整流程或代码，120字以内。" : "只说明核心变量和结构，不给可复制代码。";
     const ai = await callAi("HINT", [
-      { role: "system", content: `你是克制的算法训练教练。当前提示等级 ${body.level}。${prohibitions}` },
-      { role: "user", content: `题目摘要：${problem.statement.summary}\n本地提示：${local}\n用户代码片段：${(body.code || "").slice(0, 3000)}` }
+      { role: "system", content: `你是克制且针对当前代码的算法训练教练。当前提示等级 ${body.level}。${prohibitions} 用户代码已经附在消息中，禁止要求用户再次粘贴代码。提示必须点名当前代码里的变量、条件或缺失步骤；不要讨论平台 Harness。` },
+      { role: "user", content: `题目：${problem.title}\n题目摘要：${problem.statement.summary}\n预期观察：${problem.learningCard.keyObservation}\n参考复杂度：${problem.learningCard.complexity.time} / ${problem.learningCard.complexity.space}\n本地提示：${local}\n当前用户代码：\n${(body.code || "").slice(0, 6000)}` }
     ]);
     const levelOneLeak = body.level === 1 && /(滑动窗口|动态规划|二分|哈希|单调栈|队列|深度优先|广度优先|DFS|BFS)/i.test(ai.content);
     const codeLeak = body.level <= 3 && /```|public\s+class|for\s*\(|while\s*\(|return\s+[^，。]{8,};/i.test(ai.content);
@@ -232,11 +299,11 @@ app.post("/api/ai/:action", asyncRoute(async (request, response) => {
   try {
     const task = action === "diagnose" ? "DIAGNOSE" : "EXPLAIN";
     const system = action === "diagnose"
-      ? "你是算法代码诊断教练。只返回 JSON，字段为 errorType, lineStart, lineEnd, summary, explanation, nextHint, revealFix, confidence。revealFix 必须为 false，不给完整修复代码。"
-      : "你是算法教练。结合用户当前代码，用通俗中文解释卡点，不直接给完整答案，控制在500字内。";
+      ? "你是算法代码诊断教练。只返回 JSON，字段为 errorType, lineStart, lineEnd, summary, explanation, nextHint, revealFix, confidence。revealFix 必须为 false，不给完整修复代码。必须诊断给出的真实代码；SYSTEM_ERROR、UNVERIFIED 或缺少 Harness 只是平台信息，不得当作代码错误。"
+      : "你是算法代码教练。用户代码已经附上，禁止要求再次粘贴。必须先识别当前实现使用的算法，再结合具体变量、循环和分支分析正确性、边界、实际时间复杂度与空间复杂度。缺少 Harness 不是代码错误，必须忽略这类平台信息并继续做代码级分析。提出风险前必须沿真实控制流证明会执行到错误表达式，并给出最小反例；无法证明时明确无可证风险，禁止猜测。不直接重写完整答案。控制在700字内。";
     const ai = await callAi(task, [
       { role: "system", content: system },
-      { role: "user", content: `题目：${problem.statement.summary}\n关键观察：${problem.learningCard.keyObservation}\n用户代码：\n${(body.code || "").slice(0, 12000)}\n失败信息：${JSON.stringify(body.failure || {})}` }
+      { role: "user", content: `题目：${problem.title}（LeetCode ${problem.leetcodeId}）\n题意：${problem.statement.summary}\n方法签名：${problem.functionMode?.methodSignature || "未结构化"}\n关键观察：${problem.learningCard.keyObservation}\n参考复杂度：时间 ${problem.learningCard.complexity.time}，空间 ${problem.learningCard.complexity.space}\n当前用户代码：\n${(body.code || "").slice(0, 16000)}\n最近验证信息（其中平台缺口不得视为代码错误）：${JSON.stringify(body.failure || {})}` }
     ]);
     return response.json({ content: ai.content, source: "AI", model: ai.model, usage: ai.usage });
   } catch {
@@ -308,15 +375,29 @@ app.get("/api/plan", (_request, response) => {
 app.post("/api/summary", asyncRoute(async (request, response) => {
   const body = z.object({ period: z.enum(["day", "week"]).default("day"), useAi: z.boolean().optional() }).parse(request.body);
   const local = buildSummary(body.period);
-  if (!body.useAi || !config.ai.configured) return response.json({ ...local, source: "LOCAL" });
+  const { analysisContext, ...publicSummary } = local;
+  if (!body.useAi || !config.ai.configured) return response.json({ ...publicSummary, source: "LOCAL" });
   try {
     const ai = await callAi("SUMMARY", [
-      { role: "system", content: "你是克制、具体的算法训练教练。基于结构化事实给出进步、问题和下一步调整，不说空泛鼓励，500字以内。" },
-      { role: "user", content: JSON.stringify(local) }
+      {
+        role: "system",
+        content: [
+          "你是严谨、具体的算法训练教练。输出中文 Markdown，分为：代码表现、具体问题、下一步；700字以内。",
+          "必须逐题阅读 actualCodeSubmissions 中的真实代码，指出代码里实际采用的算法、关键变量/控制流、实际时间复杂度与空间复杂度。",
+          "只能依据代码和验证记录下结论：LOCAL_TESTS/PASSED 可称本地测试通过；AI_REVIEW 只能称静态审查；不得声称 LeetCode Accepted。",
+          "SYSTEM_ERROR、UNVERIFIED、platformIssueCount 是历史产品能力缺口，不是用户知识错误；最多用一句话注明‘旧记录未形成有效测试证据’，不得把它写成主要问题。",
+          "禁止建议检查网络、反馈平台、重试系统错误或强制使用提示。下一步必须围绕具体题目的边界用例、代码实现或算法迁移训练。",
+          "Solve/Guided/Learn 都可能是新题训练；Learn=0 不代表没有新知识。SUMMARY 不计入 completedTasks，禁止质疑分类合计。",
+          "拒绝空泛建议。每个判断必须引用题目名以及代码中的变量、循环、数据结构或具体验证结果。",
+          "声称边界错误前必须按真实控制流证明最小反例会执行到具体错误表达式；如果循环守卫已阻止访问就不得报错。",
+          "如果没有足够代码或测试证据，明确写‘证据不足’，不要猜测。"
+        ].join("\n")
+      },
+      { role: "user", content: JSON.stringify(analysisContext) }
     ]);
-    return response.json({ ...local, text: ai.content, source: "AI", model: ai.model });
+    return response.json({ ...publicSummary, text: ai.content, source: "AI", model: ai.model });
   } catch {
-    return response.json({ ...local, source: "LOCAL_FALLBACK" });
+    return response.json({ ...publicSummary, source: "LOCAL_FALLBACK" });
   }
 }));
 

@@ -1,6 +1,33 @@
 import { spawn } from "node:child_process";
 import http from "node:http";
 import { createServer } from "node:net";
+import { existsSync, readdirSync } from "node:fs";
+import path from "node:path";
+
+const discoverJavaHome = () => {
+  const pathCandidates = (process.env.PATH || "").split(path.delimiter)
+    .filter(Boolean)
+    .map((entry) => path.basename(entry).toLowerCase() === "bin" ? path.dirname(entry) : entry);
+  const installRoots = process.platform === "win32"
+    ? [
+        "C:\\Program Files\\Eclipse Adoptium",
+        "C:\\Program Files\\Java",
+        "C:\\Program Files\\Microsoft",
+        "C:\\Program Files\\BellSoft"
+      ]
+    : ["/usr/lib/jvm"];
+  const installedCandidates = installRoots.flatMap((root) => {
+    if (!existsSync(root)) return [];
+    return readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && /(?:jdk|java).*17|17.*(?:jdk|java)/i.test(entry.name))
+      .map((entry) => path.join(root, entry.name));
+  });
+  const candidates = [process.env.JAVA_HOME, ...pathCandidates, ...installedCandidates].filter(Boolean);
+  return candidates.find((candidate) =>
+    existsSync(path.join(candidate, "bin", process.platform === "win32" ? "java.exe" : "java")) &&
+    existsSync(path.join(candidate, "bin", process.platform === "win32" ? "javac.exe" : "javac"))
+  );
+};
 
 const canListen = (port) =>
   new Promise((resolve) => {
@@ -18,15 +45,21 @@ while (port < 3399) {
   port += 1;
 }
 
+const discoveredJavaHome = discoverJavaHome();
 const env = {
   ...process.env,
   PORT: String(port),
   VITE_API_URL: `http://127.0.0.1:${port}`,
-  VITE_PORT: String(port + 1000)
+  VITE_PORT: String(port + 1000),
+  ...(discoveredJavaHome ? {
+    JAVA_HOME: discoveredJavaHome,
+    PATH: `${path.join(discoveredJavaHome, "bin")}${path.delimiter}${process.env.PATH || ""}`
+  } : {})
 };
 
 console.log(`[AlgoShell] API http://127.0.0.1:${port}`);
 console.log(`[AlgoShell] Web http://127.0.0.1:${port + 1000}`);
+console.log(`[AlgoShell] Java ${discoveredJavaHome ? `JDK at ${discoveredJavaHome}` : "JDK 17 not found"}`);
 
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const children = [];
